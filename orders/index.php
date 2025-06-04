@@ -2,7 +2,7 @@
 // public/orders/index.php - View Orders Page Controller
 
 if (!defined('ROOT_PATH')) {
-    define('ROOT_PATH', dirname(__DIR__, 2));
+    define('ROOT_PATH', dirname(__DIR__, 1));
 }
 
 require_once ROOT_PATH . '/config/config.php';

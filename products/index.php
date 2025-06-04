@@ -2,7 +2,7 @@
 // public/products/index.php - Manage Products Page Controller
 
 if (!defined('ROOT_PATH')) {
-    define('ROOT_PATH', dirname(__DIR__, 2)); // Path from public/products/ to project root
+    define('ROOT_PATH', dirname(__DIR__, 1)); // Path from public/products/ to project root
 }
 
 require_once ROOT_PATH . '/config/config.php';

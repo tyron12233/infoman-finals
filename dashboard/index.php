@@ -3,7 +3,7 @@
 
 // --- Bootstrap ---
 if (!defined('ROOT_PATH')) {
-    define('ROOT_PATH', dirname(__DIR__, 2)); // Goes two levels up from public/dashboard/
+    define('ROOT_PATH', dirname(__DIR__, 1)); // Goes two levels up from public/dashboard/
 }
 
 require_once ROOT_PATH . '/config/config.php';

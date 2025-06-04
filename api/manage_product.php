@@ -5,7 +5,7 @@ header('Content-Type: application/json');
 header('Accept: application/json');
 
 if (!defined('ROOT_PATH')) {
-    define('ROOT_PATH', dirname(__DIR__, 2)); // Path from public/api/ to project root
+    define('ROOT_PATH', dirname(__DIR__, 1)); // Path from public/api/ to project root
 }
 
 require_once ROOT_PATH . '/config/config.php';

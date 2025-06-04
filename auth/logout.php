@@ -2,7 +2,7 @@
 // public/auth/logout.php
 
 if (!defined('ROOT_PATH')) {
-    define('ROOT_PATH', dirname(__DIR__, 2)); // Goes two levels up from public/auth/
+    define('ROOT_PATH', dirname(__DIR__)); // Goes two levels up from public/auth/
 }
 
 require_once ROOT_PATH . '/config/config.php'; // For session key constants if needed by auth_functions

@@ -4,7 +4,7 @@
 // --- Bootstrap ---
 // Define ROOT_PATH for easier inclusion if not already defined by a front controller
 if (!defined('ROOT_PATH')) {
-    define('ROOT_PATH', dirname(__DIR__, 2)); // Goes two levels up from public/login/ to project root
+    define('ROOT_PATH', dirname(__DIR__, 1)); // Goes two levels up from public/login/ to project root
 }
 
 require_once ROOT_PATH . '/config/config.php'; // Defines session keys

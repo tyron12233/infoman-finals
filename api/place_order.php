@@ -9,12 +9,12 @@ header('Accept: application/json');
 if (!defined('ROOT_PATH')) {
     // If this script is in the project root, ROOT_PATH is just __DIR__
     // If it's in public/api/, then define('ROOT_PATH', dirname(__DIR__, 2));
-    define('ROOT_PATH', __DIR__, 2); // Assuming place_order.php is in the project root
+    define('ROOT_PATH', __DIR__); // Assuming place_order.php is in the project root
 }
 
-require_once ROOT_PATH . '/../../config/config.php';
-require_once ROOT_PATH . '/../../config/db_connect.php'; // $mysqli object
-require_once ROOT_PATH . '/../../includes/auth_functions.php'; // For isLoggedIn and session user ID
+require_once ROOT_PATH . '/../config/config.php';
+require_once ROOT_PATH . '/../config/db_connect.php'; // $mysqli object
+require_once ROOT_PATH . '/../includes/auth_functions.php'; // For isLoggedIn and session user ID
 
 startSecureSession();
 

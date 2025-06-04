@@ -2,7 +2,7 @@
 // public/sales/print_report.php
 
 if (!defined('ROOT_PATH')) {
-    define('ROOT_PATH', dirname(__DIR__, 2));
+    define('ROOT_PATH', dirname(__DIR__));
 }
 
 require_once ROOT_PATH . '/config/config.php';
