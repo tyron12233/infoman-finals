@@ -1,19 +1,79 @@
 <?php
-// index.php - Example usage of the MySQL Connector Utility
+// login/index.php
 
-// Page Title
-$pageTitle = "PHP MySQL Connection Test";
+// --- Session Configuration & Start ---
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
 
-// --- 1. Include the MySQL Connector Utility ---
-// Ensure 'php_mysql_connector_script.php' is in the correct path.
-// If it's in the same directory, this is fine.
-// If it's in, for example, an 'includes' folder, use 'includes/php_mysql_connector_script.php'.
-require_once 'db_util.php'; // This brings in the $mysqli object
+$user_session_key = "user_id"; // Session key for storing authenticated user's ID
+$user_name_session_key = "user_full_name"; // Session key for user's full name
+$user_role_session_key = "user_role"; // Session key for user's role
 
-// At this point, the connector script will have attempted to connect to the database.
-// If the connection failed, the connector script would have exited.
-// So, if we reach here, $mysqli should be available and connected.
+// --- Database Utility ---
+// Ensure the path is correct relative to this login/index.php file.
+// It should be one level up from the 'login' directory.
+require_once 'db_util.php'; // $mysqli object should be available now.
 
+// --- Redirect if already logged in ---
+if (isset($_SESSION[$user_session_key]) && !empty($_SESSION[$user_session_key])) {
+    header("Location: ../dashboard/index.php"); // Or ../index.php to go through router
+    exit;
+}
+
+// --- Login Logic ---
+$login_error = ""; // Variable to store login error messages
+
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $username = isset($_POST['username']) ? trim($_POST['username']) : '';
+    $password = isset($_POST['password']) ? $_POST['password'] : '';
+
+    if (empty($username) || empty($password)) {
+        $login_error = "Username and password are required.";
+    } else {
+        // Prepare statement to prevent SQL injection
+        $stmt = $mysqli->prepare("SELECT id, username, password_hash, full_name, role FROM users WHERE username = ?");
+        if ($stmt) {
+            $stmt->bind_param("s", $username);
+            $stmt->execute();
+            $result = $stmt->get_result();
+
+            if ($result->num_rows === 1) {
+                $user = $result->fetch_assoc();
+                // Verify the password against the stored hash
+                if (password_verify($password, $user['password_hash'])) {
+                    // Authentication successful
+                    $_SESSION[$user_session_key] = $user['id']; // Store user's database ID
+                    $_SESSION[$user_name_session_key] = $user['full_name'] ?: $user['username']; // Store full name or username
+                    $_SESSION[$user_role_session_key] = $user['role']; // Store user's role
+
+                    // Regenerate session ID for security (prevents session fixation)
+                    session_regenerate_id(true);
+
+                    // Redirect to the main router, which will then send to dashboard
+                    header("Location: ../index.php");
+                    exit;
+                } else {
+                    // Password verification failed
+                    $login_error = "Invalid username or password.";
+                }
+            } else {
+                // Username not found
+                $login_error = "Invalid username or password.";
+            }
+            $stmt->close();
+        } else {
+            // Database query preparation failed
+            $login_error = "Login error. Please try again later.";
+            // Log the actual MySQL error for debugging (don't show to user)
+            error_log("MySQLi prepare failed: " . $mysqli->error);
+        }
+    }
+}
+// Close the database connection if it was opened by db_util.php
+// $mysqli->close(); // db_util.php might handle its own closing, or you might close it at the end of script execution.
+// For a script that might exit early, it's often better to let PHP handle closing on script end,
+// unless you have specific reasons to close it sooner.
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -21,123 +81,147 @@ require_once 'db_util.php'; // This brings in the $mysqli object
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo htmlspecialchars($pageTitle); ?></title>
+    <title>Login - 4031 Cafe POS</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            background-color: #f4f4f4;
-            color: #333;
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1e1e1e;
+            /* Dark background, similar to sidebar */
+            color: #fff;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        .container {
-            background-color: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        .login-container {
+            background-color: #2d2d2d;
+            /* Slightly lighter dark shade for the box */
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
         }
 
-        h1 {
-            color: #333;
-        }
-
-        .status {
-            padding: 10px;
+        .login-container .logo {
+            font-size: 32px;
+            font-weight: bold;
             margin-bottom: 15px;
-            border-radius: 4px;
+            padding: 10px 20px;
+            border: 2px solid #fff;
+            border-radius: 8px;
+            display: inline-block;
+            /* So it doesn't take full width */
+            color: #fff;
+            /* White logo text */
         }
 
-        .status.success {
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
+        .login-container h2 {
+            color: #c8a07d;
+            /* Accent color from POS UI */
+            margin-bottom: 30px;
+            font-size: 1.8em;
         }
 
-        .status.error {
-            background-color: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
         }
 
-        .query-results {
-            margin-top: 20px;
+        .form-group label {
+            display: block;
+            font-size: 0.9em;
+            color: #ccc;
+            margin-bottom: 8px;
         }
 
-        ul {
-            list-style-type: disc;
-            margin-left: 20px;
+        .form-group input[type="text"],
+        .form-group input[type="password"] {
+            width: calc(100% - 24px);
+            /* Full width minus padding */
+            padding: 12px;
+            border: 1px solid #555;
+            background-color: #333;
+            color: #fff;
+            border-radius: 6px;
+            font-size: 1em;
+            transition: border-color 0.3s;
         }
 
-        pre {
-            background-color: #eee;
+        .form-group input[type="text"]:focus,
+        .form-group input[type="password"]:focus {
+            outline: none;
+            border-color: #c8a07d;
+            /* Accent color on focus */
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 12px;
+            background-color: #c8a07d;
+            /* Accent color */
+            color: #1e1e1e;
+            /* Dark text on accent button */
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: bold;
+            transition: background-color 0.3s;
+            margin-top: 10px;
+        }
+
+        .login-btn:hover {
+            background-color: #b38f6f;
+            /* Darker shade of accent */
+        }
+
+        .error-message {
+            color: #ff6b6b;
+            /* Light red for errors */
+            background-color: rgba(255, 107, 107, 0.1);
+            border: 1px solid rgba(255, 107, 107, 0.3);
             padding: 10px;
-            border-radius: 4px;
-            white-space: pre-wrap;
-            word-wrap: break-word;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+        }
+
+        .footer-text {
+            margin-top: 30px;
+            font-size: 0.8em;
+            color: #777;
         }
     </style>
 </head>
 
 <body>
-    <div class="container">
-        <h1><?php echo htmlspecialchars($pageTitle); ?></h1>
+    <div class="login-container">
+        <div class="logo">4031 CAFE</div>
+        <h2>POS Login</h2>
 
-        <?php
-        // --- 2. Check if $mysqli object exists (it should if require_once didn't fail) ---
-        if (isset($mysqli) && $mysqli instanceof mysqli) {
-            echo "<div class='status success'>Successfully included connector. MySQL connection object is available.</div>";
-            echo "<p><strong>MySQL Server Version:</strong> " . htmlspecialchars($mysqli->server_info) . "</p>";
+        <?php if (!empty($login_error)): ?>
+            <div class="error-message"><?php echo htmlspecialchars($login_error); ?></div>
+        <?php endif; ?>
 
-            // --- 3. Perform a Simple Query ---
-            echo "<div class='query-results'>";
-            echo "<h2>Attempting a simple query...</h2>";
-
-            // Example: List databases (useful if no specific $dbName was set in the connector)
-            // Or, if $dbName was set in the connector, you could query a specific table.
-            $query = "SHOW DATABASES;";
-            // If you have a specific database selected in the connector (e.g., $dbName = "my_app_db";)
-            // you might want to query a table instead:
-            // $query = "SELECT * FROM some_table LIMIT 5;";
-        
-            $result = $mysqli->query($query);
-
-            if ($result) {
-                echo "<div class='status success'>Query executed successfully: <code>" . htmlspecialchars($query) . "</code></div>";
-                if ($result->num_rows > 0) {
-                    echo "<p><strong>Results:</strong></p>";
-                    echo "<ul>";
-                    // For SHOW DATABASES, the column is 'Database'
-                    // For other queries, adjust the column name accordingly.
-                    while ($row = $result->fetch_assoc()) {
-                        // Check which keys are available in the row
-                        if (isset($row['Database'])) {
-                            echo "<li>" . htmlspecialchars($row['Database']) . "</li>";
-                        } else {
-                            // Generic display for other queries
-                            echo "<li><pre>" . htmlspecialchars(print_r($row, true)) . "</pre></li>";
-                        }
-                    }
-                    echo "</ul>";
-                } else {
-                    echo "<p>Query returned no rows.</p>";
-                }
-                $result->free(); // Free the result set
-            } else {
-                echo "<div class='status error'>Error executing query: <code>" . htmlspecialchars($query) . "</code><br>";
-                echo "<strong>MySQL Error:</strong> " . htmlspecialchars($mysqli->error) . "</div>";
-            }
-            echo "</div>"; // end .query-results
-        
-            // --- 4. Close the MySQL Connection ---
-            // It's good practice to close the connection when you're done with database operations.
-            $mysqli->close();
-            echo "<p style='margin-top: 20px; font-style: italic;'>MySQL connection closed.</p>";
-
-        } else {
-            // This case should ideally not be reached if the connector script exits on fatal connection error.
-            echo "<div class='status error'>Failed to establish MySQL connection or $mysqli object not available. Check connector script.</div>";
-        }
-        ?>
+        <form action="index.php" method="POST"> <!-- Action is this same file -->
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" required
+                    value="<?php echo isset($_POST['username']) ? htmlspecialchars($_POST['username']) : ''; ?>">
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            <button type="submit" class="login-btn">Login</button>
+        </form>
+        <p class="footer-text">&copy; <?php echo date("Y"); ?> 4031 Cafe. All rights reserved.</p>
     </div>
 </body>
 

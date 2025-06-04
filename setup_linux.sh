@@ -21,7 +21,7 @@ PHP_DEV_SERVER_HOST="localhost"
 PHP_DEV_SERVER_PORT="8000"
 MYSQL_DEFAULT_PORT="3306" # Standard MySQL port
 # Get the directory where the script is located, which will be the web root
-WEB_ROOT_DIR="$(pwd)" # Use current working directory
+WEB_ROOT_DIR="$(pwd)/public" # Use current working directory
 
 # --- Helper Functions ---
 function print_info {
